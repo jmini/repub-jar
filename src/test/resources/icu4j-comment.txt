@@ -1,0 +1,6 @@
+<!--
+    Original jar location: https://download.eclipse.org/eclipse/updates/4.14/R-4.14-201912100610/plugins/com.ibm.icu_64.2.0.v20190507-1337.jar
+    Original source jar location: https://download.eclipse.org/eclipse/updates/4.14/R-4.14-201912100610/plugins/com.ibm.icu.source_64.2.0.v20190507-1337.jar
+    Original POM: com.ibm.icu:icu4j:64.2
+    POM created by the tool: https://jmini.github.io/repub-jar
+-->

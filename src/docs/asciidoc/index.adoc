@@ -1,0 +1,212 @@
+:rootdir: ../../..
+:github-readme: {rootdir}/README.adoc
+:srcdir: {rootdir}/src/
+:listing-caption: Listing
+:revdate: {project-builddate}
+:revnumber: {project-version}
+
+include::{github-readme}[tags=vardef]
+
+:projectpage: https://github.com/{gh-repo-owner}/{gh-repo-name}
+
+include::{github-readme}[tags=header]
+
+== URLs
+
+* link:{homepage}[Project home] (this page)
+* link:{projectpage}[GitHub project]
+* link:{issues}[Issue tracker]
+
+TIP: Do you want to improve this page? Please git-link:self[edit it on GitHub, edit].
+
+== Description
+
+=== Context
+
+When you use some of the Eclipse libraries published on Maven Central, not all their dependencies have proper metadata.
+
+The reason is that maven have an other place where to get third party dependencies.
+This is the link:xxx[Eclipse Orbit] project.
+The problem is that its 
+link:https://download.eclipse.org/tools/orbit/downloads/[downloads] section do not use a maven repository but a P2 repository.
+
+When you are in a regular maven or gradle job, consuming jars from a P2 repository is not straight forward.
+Maven repositories are more standard and way easier to use.
+
+This project is about being able to take a jar from anywhere and a POM from maven-central, in order to republish the jar in a maven repository.
+
+=== Technical details
+
+When doing a publication, several operations are made.
+Step by step:
+
+* The jar and optionally the source jar are downloaded from an URL
+* The pom is downloaded form maven central and transformed
+** The effective jar is calculated (using the https://maven.apache.org/plugins/maven-help-plugin/effective-pom-mojo.html[Apache Maven Help Plugin])
+** Optionally coordinates (`groupId`, `artifactId`, `version`) are changed
+** The pom is flattened (using the https://www.mojohaus.org/flatten-maven-plugin/flatten-mojo.html[Maven Flatten Plugin])
+** A comment about the transformation is added
+* The jars and the pom are published in a local folder
+
+==== Comment added to the modified pom
+
+The published pom has following comment, so that it is possible to understand where it comes from.
+
+[source, xml]
+.comment added to the published pom
+----
+include::../../test/resources/icu4j-comment.txt[]
+----
+
+== Usage
+
+[source, xml]
+.main help message
+----
+include::../../test/resources/main-help-output.txt[]
+----
+
+=== Example
+
+To download the `com.ibm.icu_64.2.0.v20190507-1337.jar` jar together with its `source` jar from the https://download.eclipse.org/eclipse/updates/4.14/R-4.14-201912100610/ P2 Update site.
+The corresponding pom in Maven Central is `com.ibm.icu:icu4j:64.2`.
+
+Command to publish the jar in a local maven repository with the pom coming from maven central:
+
+[source]
+.command line usage example
+----
+repub-jar --input-jar=https://download.eclipse.org/eclipse/updates/4.14/R-4.14-201912100610/plugins/com.ibm.icu_64.2.0.v20190507-1337.jar \
+  --input-sources-jar=https://download.eclipse.org/eclipse/updates/4.14/R-4.14-201912100610/plugins/com.ibm.icu.source_64.2.0.v20190507-1337.jar \
+  --input-group-id=com.ibm.icu \
+  --input-artifact-id=icu4j \
+  --input-version=64.2 \
+  --output-group-id=patched.com.ibm.icu \
+  --output-version=64.2.0.v20190507-1337 \
+  --working-dir=output"
+----
+
+The command creates following output:
+
+[source]
+.command line usage example
+----
+output/repository/
+└── patched
+    └── com
+        └── ibm
+            └── icu
+                └── icu4j
+                    └── 64.2.0.v20190507-1337
+                        ├── icu4j-64.2.0.v20190507-1337-sources.jar
+                        ├── icu4j-64.2.0.v20190507-1337-sources.jar.md5
+                        ├── icu4j-64.2.0.v20190507-1337-sources.jar.sha1
+                        ├── icu4j-64.2.0.v20190507-1337-sources.jar.sha256
+                        ├── icu4j-64.2.0.v20190507-1337-sources.jar.sha512
+                        ├── icu4j-64.2.0.v20190507-1337.jar
+                        ├── icu4j-64.2.0.v20190507-1337.jar.md5
+                        ├── icu4j-64.2.0.v20190507-1337.jar.sha1
+                        ├── icu4j-64.2.0.v20190507-1337.jar.sha256
+                        ├── icu4j-64.2.0.v20190507-1337.jar.sha512
+                        ├── icu4j-64.2.0.v20190507-1337.pom
+                        ├── icu4j-64.2.0.v20190507-1337.pom.md5
+                        ├── icu4j-64.2.0.v20190507-1337.pom.sha1
+                        ├── icu4j-64.2.0.v20190507-1337.pom.sha256
+                        └── icu4j-64.2.0.v20190507-1337.pom.sha512
+----
+
+== Download
+
+The tool is hosted on maven central.
+
+[source, xml, subs="verbatim,attributes"]
+.coordinates on maven central (xml notation)
+----
+<dependency>
+  <groupId>{maven-group-id}</groupId>
+  <artifactId>{maven-artifact-id}</artifactId>
+  <version>{last-stable-version}</version>
+</dependency>
+----
+
+It is available as regular jar. link:https://www.jbang.dev/[Jbang] is really convenient to run it:
+
+[source, subs="verbatim,attributes"]
+----
+jbang run {maven-group-id}:{maven-artifact-id}:{last-stable-version} --help
+----
+
+A self executing jar is available as well:
+
+{shadow-jar-url}
+
+== Source Code
+
+As for any java project, the source code of the plugin is available in the git-link:src/[src/] folder.
+
+=== Build
+
+This project is using gradle.
+
+Command to build the sources locally:
+
+----
+./gradlew build
+----
+
+Command to run the tool locally, passing the `--help` argument to the application:
+
+----
+./gradlew run --args="--help"
+----
+
+Command to deploy to your local maven repository:
+
+----
+./gradlew publishToMavenLocal
+----
+
+Command to build the documentation page:
+
+----
+./gradlew asciidoctor
+----
+
+The output of this command is an HTML page located at `<git repo root>/build/docs/html5/index.html`.
+
+==== For project maintainers
+
+`signing.gnupg.keyName` and `signing.gnupg.passphrase` are expected to be set in your local `gradle.properties` file to be able to sign.
+
+Command to upload the documentation page on GitHub pages:
+
+----
+./gradlew gitPublishPush
+----
+
+Command to perform a release:
+
+----
+./gradlew release -Prelease.useAutomaticVersion=true
+----
+
+==== Using ssh-agent
+
+Some tasks requires to push into the distant git repository (release task or updating the `gh-pages` branch).
+If they are failing with errors like this:
+----
+org.eclipse.jgit.api.errors.TransportException: ... Permission denied (publickey).
+---- 
+
+Then `ssh-agent` can be used.
+----
+eval `ssh-agent -s`
+ssh-add ~/.ssh/id_rsa
+----
+(link:https://superuser.com/a/990447/[source] for this approach)
+
+
+include::{github-readme}[tags=contact-section]
+
+include::{github-readme}[tags=license-section]
+

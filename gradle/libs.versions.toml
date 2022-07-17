@@ -1,0 +1,16 @@
+[versions]
+junit = "5.7.1"
+shrinkwrap = "3.1.4"
+
+[libraries]
+assertj-core = { module = "org.assertj:assertj-core", version = "3.11.1" }
+
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+
+mvn-utils = { module = "fr.jmini.utils:mvn-utils", version = "1.0.0" }
+
+picocli = { module = "info.picocli:picocli", version = "4.6.3" }
+
+shrinkwrap-resolver-api = { module = "org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven-embedded", version.ref = "shrinkwrap" }
+shrinkwrap-resolver-impl = { module = "org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-maven-embedded", version.ref = "shrinkwrap" }

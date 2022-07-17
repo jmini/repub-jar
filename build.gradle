@@ -1,0 +1,256 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+    dependencies {
+        classpath 'fr.jmini.utils:mvn-utils:1.0.0'
+  }
+  configurations.classpath {
+    resolutionStrategy {
+      //This is required by 'grgit' version '4.1.1':
+      force 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
+    }
+  }
+}
+
+plugins {
+    id 'application'
+    id 'maven-publish'
+    id 'signing'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'org.ajoberstar.git-publish' version '3.0.1'
+    id 'org.ajoberstar.grgit' version '4.1.1'
+    id 'com.diffplug.spotless' version '6.1.0'
+    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+    id 'net.researchgate.release' version '2.6.0'
+}
+
+wrapper {
+    gradleVersion = '7.3.3'
+}
+
+String groupId = 'fr.jmini.utils'
+group = groupId
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+signing {
+    useGpgCmd()
+    sign(publishing.publications)
+}
+
+tasks.withType(Sign) {
+    onlyIf {
+        project.hasProperty('signing.gnupg.keyName')
+    }
+}
+
+dependencies {
+    implementation libs.picocli
+    implementation libs.mvn.utils
+    implementation libs.shrinkwrap.resolver.api
+    runtimeOnly libs.shrinkwrap.resolver.impl
+    testImplementation libs.junit.api
+    testImplementation libs.assertj.core
+    testRuntimeOnly libs.junit.engine
+}
+
+String appMainClass = 'fr.jmini.utils.repubjar.App'
+application {
+    mainClass = appMainClass
+}
+
+jar {
+  manifest {
+    attributes(
+      'Main-Class': appMainClass
+    )
+  }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+shadowJar {
+    archiveFileName = "repub-jar.jar"
+    archiveClassifier = 'all'
+    mainClassName = appMainClass
+}
+
+def genOutputDir = file("$buildDir/generated/main-resources")
+
+def generateMainResourcesTask = tasks.register('generateMainResources') {
+	def generatedFile = new File(genOutputDir, "version.txt")
+	outputs.file(generatedFile)
+
+	doLast {
+		generatedFile.text = """
+version=$rootProject.version
+buildtime=${java.time.Instant.now().toString()}
+"""
+	}
+}
+
+sourceSets.main.output.dir genOutputDir, builtBy: generateMainResourcesTask
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'RepubJar'
+                description = 'Tool for to work with https://repubjar.me/'
+                packaging = 'jar'
+                url = 'https://' + "$githubRepositoryOwner" + '.github.io/' + "$githubRepositoryName" + '/'
+                licenses {
+                    license {
+                        name = 'Eclipse Public License - v 2.0'
+                        url = 'https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'jmini'
+                        name = 'Jeremie Bresson'
+                        email = 'dev@jmini.fr'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/' + "$githubRepositoryOwner" + '/' + "$githubRepositoryName" + '.git'
+                    developerConnection = 'scm:git:https://github.com/' + "$githubRepositoryOwner" + '/' + "$githubRepositoryName" + '.git'
+                    url = 'https://github.com/' + "$githubRepositoryOwner" + '/' + "$githubRepositoryName" + '/'
+                }
+            }
+            from components.java
+        }
+    }
+}
+
+nexusPublishing {
+    packageGroup = 'fr.jmini'
+    repositories {
+        sonatype {
+            username = project.findProperty('sonatypeUser') ?: ''
+            password = project.findProperty('sonatypePassword') ?: ''
+        }
+    }
+}
+
+def buildDate() {
+    return new Date().format('yyyy-MM-dd')
+}
+
+configurations {
+    asciidoctorExtensions
+}
+
+asciidoctorj {
+    version = "$asciidoctorjVersion"
+}
+
+String shadowJarUrl = fr.jmini.utils.mvnutils.Maven.jarMavenCentralUrl(new fr.jmini.utils.mvnutils.MavenArtifact(groupId, project.name, lastVersion, 'all'))
+
+asciidoctor {
+    configurations 'asciidoctorExtensions'
+    sourceDir = file('src/docs/asciidoc')
+    baseDirFollowsSourceFile()
+    outputDir = file('build/docs/html5')
+    attributes = ['revdate'             : "${buildDate()}",
+                  'project-version'     : "$version",
+                  'maven-group-id'      : "$groupId",
+                  'maven-artifact-id'   : "${project.name}",
+                  'last-stable-version' : "$lastVersion",
+                  'shadow-jar-url'      : shadowJarUrl,
+                  'attribute-missing'   : 'warn',
+                  'source-highlighter'  : 'coderay',
+                  'imagesdir'           : '',
+                  'toc'                 : 'left',
+                  'icons'               : 'font',
+                  'toclevels'           : '3',
+                  'sectanchors'         : 'true',
+                  'idprefix'            : '',
+                  'idseparator'         : '-',
+                  'docinfo1'            : 'true']
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        asciidoctorExtensions 'fr.jmini.asciidoctorj:git-link:3.2.2'
+    }
+}
+
+gitPublish {
+    repoUri = 'git@github.com:' + "$githubRepositoryOwner" + '/' + "$githubRepositoryName" + '.git'
+    branch = 'gh-pages'
+
+    contents {
+        from "${file('build/docs/html5')}"
+    }
+
+    preserve {
+        include '.nojekyll'
+        exclude '.DS_Store'
+    }
+
+    commitMessage = "Update the 'gh-pages' branch."
+}
+
+spotless {
+  java {
+    importOrder 'java', 'javax', 'org', 'com', ''
+    removeUnusedImports()
+
+    // available versions are: https://github.com/diffplug/spotless/tree/master/lib-extra/src/main/resources/com/diffplug/spotless/extra/eclipse_jdt_formatter
+    eclipse('4.13.0').configFile('.settings/org.eclipse.jdt.core.prefs')
+  }
+}
+
+release {
+    buildTasks = ['doRelease']
+}
+
+task doRelease {
+    dependsOn(
+        'checkLastVersionValue',
+        'publishToSonatype',
+        'asciidoctor',
+        'gitPublishPush'
+    )
+}
+
+task checkLastVersionValue {
+    doLast {
+        if(version.endsWith('SNAPSHOT')) {
+            throw new GradleException("version '$version' ends with SNAPSHOT, this is not a release build!")
+        }
+        if(lastVersion != version) {
+            throw new GradleException("lastVersion '$lastVersion' does not match version '$version', fix it in the 'gradle.properties' file.")
+        }
+    }
+}
+
+def updateLastVersionValueTask = tasks.register('updateLastVersionValue') {
+    doLast {
+        def propertiesFile = file('gradle.properties')
+        def content = propertiesFile.text
+        content = content.replaceAll("lastVersion=[0-9\\.]+", "lastVersion=" + version.replace('-SNAPSHOT', ''))
+        propertiesFile.text = content
+    }
+}
+
+model {
+    tasks.unSnapshotVersion {
+        dependsOn updateLastVersionValueTask
+    }
+}

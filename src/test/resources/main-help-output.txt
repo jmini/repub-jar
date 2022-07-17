@@ -1,0 +1,36 @@
+Usage: repub-jar [-hV] --input-artifact-id=<inputArtifactId>
+                 --input-group-id=<inputGroupId> --input-jar=<inputJarUrl>
+                 [--input-sources-jar=<inputSourcesJarUrl>]
+                 --input-version=<inputVersion>
+                 [--output-artifact-id=<outputArtifactId>]
+                 [--output-group-id=<outputGroupId>]
+                 [--output-version=<outputVersion>] [--repository=<repository>]
+                 [--working-dir=<workingFolder>]
+  -h, --help      Show this help message and exit.
+      --input-artifact-id=<inputArtifactId>
+                  artifactId of the input pom
+      --input-group-id=<inputGroupId>
+                  groupId of the input pom
+      --input-jar=<inputJarUrl>
+                  url of the jar used as input
+      --input-sources-jar=<inputSourcesJarUrl>
+                  url of the sources jar used as input
+      --input-version=<inputVersion>
+                  version of the input pom
+      --output-artifact-id=<outputArtifactId>
+                  artifactId of the output artifacts, when not defined the
+                    artifactId of the input pom is used
+      --output-group-id=<outputGroupId>
+                  groupId of the output artifacts, when not defined the groupId
+                    of the input pom is used
+      --output-version=<outputVersion>
+                  version of the output artifacts, when not defined the version
+                    of the input pom is used
+      --repository=<repository>
+                  Folder path (relative to the working folder or absolute) of
+                    the maven repository where the artifacts are published. By
+                    default 'repository' inside the working folder is used
+  -V, --version   Print version information and exit.
+      --working-dir=<workingFolder>
+                  Path of the working folder, when not defined a toporary
+                    folder is used
