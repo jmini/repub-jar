@@ -2,8 +2,8 @@ buildscript {
   repositories {
     mavenCentral()
   }
-    dependencies {
-        classpath 'fr.jmini.utils:mvn-utils:1.0.0'
+  dependencies {
+    classpath 'fr.jmini.utils:mvn-utils:1.0.0'
   }
   configurations.classpath {
     resolutionStrategy {
@@ -92,15 +92,15 @@ shadowJar {
 def genOutputDir = file("$buildDir/generated/main-resources")
 
 def generateMainResourcesTask = tasks.register('generateMainResources') {
-	def generatedFile = new File(genOutputDir, "version.txt")
-	outputs.file(generatedFile)
+    def generatedFile = new File(genOutputDir, "version.txt")
+    outputs.file(generatedFile)
 
-	doLast {
-		generatedFile.text = """
+    doLast {
+        generatedFile.text = """
 version=$rootProject.version
 buildtime=${java.time.Instant.now().toString()}
 """
-	}
+    }
 }
 
 sourceSets.main.output.dir genOutputDir, builtBy: generateMainResourcesTask
