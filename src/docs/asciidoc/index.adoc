@@ -26,7 +26,7 @@ TIP: Do you want to improve this page? Please git-link:self[edit it on GitHub, e
 When you use some of the Eclipse libraries published on Maven Central, not all their dependencies have proper metadata.
 
 The reason is that maven have an other place where to get third party dependencies.
-This is the link:xxx[Eclipse Orbit] project.
+This is the link:https://projects.eclipse.org/projects/tools.orbit[Eclipse Orbit] project.
 The problem is that its 
 link:https://download.eclipse.org/tools/orbit/downloads/[downloads] section do not use a maven repository but a P2 repository.
 
@@ -42,7 +42,7 @@ Step by step:
 
 * The jar and optionally the source jar are downloaded from an URL
 * The pom is downloaded form maven central and transformed
-** The effective jar is calculated (using the https://maven.apache.org/plugins/maven-help-plugin/effective-pom-mojo.html[Apache Maven Help Plugin])
+** The effective pom is calculated (using the https://maven.apache.org/plugins/maven-help-plugin/effective-pom-mojo.html[Apache Maven Help Plugin])
 ** Optionally coordinates (`groupId`, `artifactId`, `version`) are changed
 ** The pom is flattened (using the https://www.mojohaus.org/flatten-maven-plugin/flatten-mojo.html[Maven Flatten Plugin])
 ** A comment about the transformation is added
