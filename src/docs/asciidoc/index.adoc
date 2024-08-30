@@ -83,7 +83,7 @@ repub-jar --input-jar=https://download.eclipse.org/eclipse/updates/4.14/R-4.14-2
   --input-version=64.2 \
   --output-group-id=patched.com.ibm.icu \
   --output-version=64.2.0.v20190507-1337 \
-  --working-dir=output"
+  --working-dir=output
 ----
 
 The command creates following output:
