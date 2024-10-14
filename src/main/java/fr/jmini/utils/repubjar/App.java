@@ -90,11 +90,11 @@ public class App implements Runnable {
         Path projectPom = prepareRootFolder(root);
         Path effectivePom = fetchEffectivePom(projectPom, input);
 
-        Path modifiedPom = createModifiedPom(effectivePom, input, output);
+        Path flattenedPom = createFlattenedPom(effectivePom, input);
 
-        Path flattenedPom = createFlattenedPom(modifiedPom, output);
+        Path modifiedPom = createModifiedPom(flattenedPom, input, output);
 
-        Path commentedPom = addComment(flattenedPom, input, output, inputJarUrl, inputSourcesJarUrl);
+        Path commentedPom = addComment(modifiedPom, input, output, inputJarUrl, inputSourcesJarUrl);
 
         publishArtifacts(commentedPom, repo, output, inputJarUrl, inputSourcesJarUrl);
     }
@@ -118,12 +118,11 @@ public class App implements Runnable {
     }
 
     static Path fetchEffectivePom(Path projectPom, MavenArtifact input) {
+        Path effective = createFile(projectPom.getParent(), input, "effective_", ".xml");
+
         String groupId = input.getGroupId();
         String artifactId = input.getArtifactId();
         String version = input.getVersion();
-
-        Path effective = projectPom.getParent()
-                .resolve("effective_" + groupId + "__" + artifactId + "__" + version + ".xml");
 
         EmbeddedMaven.forProject(absolutePath(projectPom))
                 .addProperty("output", absolutePath(effective))
@@ -139,12 +138,7 @@ public class App implements Runnable {
             return effectivePom;
         }
 
-        String groupId = input.getGroupId();
-        String artifactId = input.getArtifactId();
-        String version = input.getVersion();
-
-        Path modified = effectivePom.getParent()
-                .resolve("effective_" + groupId + "__" + artifactId + "__" + version + ".xml");
+        Path modified = createFile(effectivePom.getParent(), input, "modified_", ".xml");
         String content = readFile(effectivePom);
         String modifiedContent = createModifiedContent(input, output, content);
         writeFile(modified, modifiedContent);
@@ -163,13 +157,8 @@ public class App implements Runnable {
         return content.replaceFirst("<" + tagName + ">" + getter.apply(input) + "</" + tagName + ">", "<" + tagName + ">" + getter.apply(output) + "</" + tagName + ">");
     }
 
-    static Path createFlattenedPom(Path modifiedPom, MavenArtifact output) {
-        String groupId = output.getGroupId();
-        String artifactId = output.getArtifactId();
-        String version = output.getVersion();
-
-        Path flattened = modifiedPom.getParent()
-                .resolve("flattened_" + groupId + "__" + artifactId + "__" + version + ".xml");
+    static Path createFlattenedPom(Path modifiedPom, MavenArtifact input) {
+        Path flattened = createFile(modifiedPom.getParent(), input, "flattened_", ".xml");
         String flattenedPomFilename = flattened.getFileName()
                 .toString();
         EmbeddedMaven.forProject(absolutePath(modifiedPom))
@@ -180,12 +169,7 @@ public class App implements Runnable {
     }
 
     static Path addComment(Path flattenedPom, MavenArtifact input, MavenArtifact output, String inputJar, String inputSourcesJar) {
-        String groupId = output.getGroupId();
-        String artifactId = output.getArtifactId();
-        String version = output.getVersion();
-
-        Path commented = flattenedPom.getParent()
-                .resolve("commented_" + groupId + "__" + artifactId + "__" + version + ".xml");
+        Path commented = createFile(flattenedPom.getParent(), output, "commented_", ".xml");
         String content = readFile(flattenedPom);
         String commentedContent = createCommentedContent(input, inputJar, inputSourcesJar, content);
         writeFile(commented, commentedContent);
@@ -211,18 +195,12 @@ public class App implements Runnable {
     }
 
     static void publishArtifacts(Path commentedPom, Path repo, MavenArtifact output, String inputJar, String inputSourcesJar) throws IOException {
-        String groupId = output.getGroupId();
-        String artifactId = output.getArtifactId();
-        String version = output.getVersion();
-
-        Path jarFile = commentedPom.getParent()
-                .resolve("jar_" + groupId + "__" + artifactId + "__" + version + ".jar");
+        Path jarFile = createFile(commentedPom.getParent(), output, "jar_", ".jar");
         download(inputJar, jarFile);
 
         Path sourcesJar;
         if (inputSourcesJar != null) {
-            sourcesJar = commentedPom.getParent()
-                    .resolve("sourcesJar_" + groupId + "__" + artifactId + "__" + version + ".jar");
+            sourcesJar = createFile(commentedPom.getParent(), output, "sourcesJar_", ".jar");
             download(inputSourcesJar, sourcesJar);
         } else {
             sourcesJar = null;
@@ -235,11 +213,19 @@ public class App implements Runnable {
         Maven.writeFileToRepositoryWithArmoredFiles(repo, output, ".jar", jarContent, Algorithm.MD_5, Algorithm.SHA_1, Algorithm.SHA_256, Algorithm.SHA_512);
 
         if (sourcesJar != null) {
-            MavenArtifact outputSources = new MavenArtifact(groupId, artifactId, version, "sources");
+            MavenArtifact outputSources = new MavenArtifact(output, "sources");
             byte[] sourcesJarContent = Files.readAllBytes(sourcesJar);
             Maven.writeFileToRepositoryWithArmoredFiles(repo, outputSources, ".jar", sourcesJarContent, Algorithm.MD_5, Algorithm.SHA_1, Algorithm.SHA_256, Algorithm.SHA_512);
         }
         System.out.println("Published to repository: " + repo.normalize());
+    }
+
+    private static Path createFile(Path folder, MavenArtifact artifact, String prefix, String suffix) {
+        String groupId = artifact.getGroupId();
+        String artifactId = artifact.getArtifactId();
+        String version = artifact.getVersion();
+
+        return folder.resolve(prefix + groupId + "__" + artifactId + "__" + version + suffix);
     }
 
     private static String readFile(Path file) {
