@@ -2,6 +2,7 @@
 build/
 bin/
 target/
+output*/
 
 # Compiled class file
 *.class
