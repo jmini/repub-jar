@@ -20,8 +20,6 @@ Command line tool to republish existing jar to a maven repository.
 
 //end::header[]
 
-image:https://circleci.com/gh/{gh-repo-owner}/{gh-repo-name}.svg?style=svg["CircleCI", link="https://circleci.com/gh/{gh-repo-owner}/{gh-repo-name}"]
-
 == Project Homepage
 
 Visit the link:{homepage}[project home page] to know more this project.

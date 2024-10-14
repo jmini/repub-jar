@@ -1,0 +1,28 @@
+name: CI Build
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  build-gradle:
+    name: "Build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup JDK 8
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 8
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: GitLab4j verify
+        id: gitlab4j-verify
+        run: |
+          ./gradlew build --console=PLAIN --stacktrace
